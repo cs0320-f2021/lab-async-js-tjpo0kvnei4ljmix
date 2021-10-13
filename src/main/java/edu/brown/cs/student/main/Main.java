@@ -14,6 +14,8 @@ import freemarker.template.Configuration;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
+import org.json.JSONException;
+import org.json.JSONObject;
 import spark.*;
 import spark.template.freemarker.FreeMarkerEngine;
 
@@ -121,7 +123,9 @@ public final class Main {
     // Setup Spark Routes
     Spark.get("/autocorrect", new AutocorrectHandler(), freeMarker);
     //TODO: create a call to Spark.post to make a post request to a url which
-      // will handle getting autocorrect results for the input
+    // will handle getting autocorrect results for the input
+
+    Spark.post("/results", new ResultsHandler());
   }
 
   /**
@@ -159,16 +163,30 @@ public final class Main {
      */
     private static class ResultsHandler implements Route {
         @Override
-        public String handle(Request req, Response res) {
+        public String handle(Request req, Response res) throws JSONException {
             //TODO: Get JSONObject from req and use it to get the value of the input you want to
             // generate suggestions for
+          System.out.println("In ResultsHandler");
 
-            //TODO: use the global autocorrect instance to get the suggestions
+          JSONObject bodyJson = new JSONObject(req.body());
+          System.out.println("JSON Body is: " + bodyJson);
 
-            //TODO: create an immutable map using the suggestions
+          //TODO: use the global autocorrect instance to get the suggestions
+          String textboxValue = bodyJson.getString("text");
+          Set<String> suggestions = ac.suggest(textboxValue);
 
-            //TODO: return a Json of the suggestions (HINT: use the GSON.Json())
-            return null;
+          /*
+          String suggestionString = "";
+          for (String singleSuggestion : suggestions) {
+            suggestionString += singleSuggestion + " ";
+          }
+           */
+
+          //TODO: create an immutable map using the suggestions
+          Map variables = ImmutableMap.of("suggestions", suggestions);
+
+          //TODO: return a Json of the suggestions (HINT: use the GSON.Json())
+          return GSON.toJson(variables);
         }
     }
 }
